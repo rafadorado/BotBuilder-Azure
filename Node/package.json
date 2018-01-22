@@ -27,12 +27,14 @@
     "azure-storage": "^2.6.0",
     "botbuilder": "^3.11.0",
     "documentdb": "^1.13.0",
+    "mongodb": "^3.0.1",
     "promise": "^7.1.1",
     "tedious": "^2.0.0"
   },
   "devDependencies": {
     "@types/async": "^2.0.44",
     "@types/documentdb": "0.0.33",
+    "@types/mongodb": "^3.0.2",
     "@types/node": "^6.0.90",
     "@types/promise": "^7.1.30",
     "@types/tedious": "^1.8.31"
