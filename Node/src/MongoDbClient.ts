@@ -43,11 +43,17 @@ export interface IMongoDbOptions {
     ip: string;
     port: number;
     database: string;
-    collection: string
+    collection: string;
+    username: string;
+    password: string;
+    queryString: string;
 }
 
 export interface IMongoDbEntity extends IBotEntity {
     id: string;
+}
+export interface MongoConnectOptions {
+    [k: string]: any
 }
 
 export class MongoDbClient implements IStorageClient {
@@ -63,15 +69,22 @@ export class MongoDbClient implements IStorageClient {
 
     /** Initializes the MongoDb client */
     initialize(callback: (error: any) => void): void {
-        var uri:string = `mongodb://${this.options.ip}:${this.options.port}/${this.options.database}`;
-        MongoClient.connect(uri)
-            .then( (client) => {
+        var uri:string = `mongodb://${this.options.ip}:${this.options.port}/${this.options.queryString}`;
+        var connectOptions:MongoConnectOptions = {};
+        
+        if(this.options.username && this.options.password){
+            connectOptions.auth = {}; 
+            connectOptions.auth.user = this.options.username;
+            connectOptions.auth.password = this.options.password;
+        }
+        MongoClient.connect(uri, connectOptions)
+            .then( (client:MongoClient) => {
                 this.client = client;
                 this.db = this.client.db(this.options.database);
                 this.collection = this.db.collection(this.options.collection);
                 callback(null);
             })
-            .catch( (error) =>{
+            .catch( (error:Error) =>{
                 throw Error(`Can't connect to db ${error}`);
             });
     }
