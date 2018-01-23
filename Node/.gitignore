@@ -3,3 +3,4 @@
 /**/*.VC.db
 /built
 /docs/doc
+/**/package-lock.json
