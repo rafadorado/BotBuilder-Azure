@@ -432,3 +432,27 @@ export class AzureSqlClient implements IStorageClient {
     /** Retrieves an entity from the Azure SQL */
     retrieve(partitionKey: string, rowKey: string, callback: (error: Error, entity: IBotEntity, response: IHttpResponse) => void): void;
 }
+
+export interface IMongoDbOptions {
+    ip: string;
+    port: number;
+    database: string;
+    collection: string;
+    username: string;
+    password: string;
+    queryString: string;
+}
+
+export class MongoDbClient implements IStorageClient {
+
+    constructor(options: IMongoDbOptions);
+
+    /** Initializes the MongoDb client */
+    initialize(callback: (error: Error) => void): void;
+
+    /** Inserts or replaces an entity in the MongoDb */
+    insertOrReplace(partitionKey: string, rowKey: string, data: any, isCompressed: boolean, callback: (error: Error, etag: any, response: IHttpResponse) => void): void;
+
+    /** Retrieves an entity from the MongoDb */
+    retrieve(partitionKey: string, rowKey: string, callback: (error: Error, entity: IBotEntity, response: IHttpResponse) => void): void;
+}

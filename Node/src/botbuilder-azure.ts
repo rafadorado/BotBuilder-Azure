@@ -36,6 +36,7 @@ import { AzureBotStorage } from './AzureBotStorage';
 import { AzureTableClient } from './AzureTableClient';
 import { DocumentDbClient } from './DocumentDbClient';
 import { AzureSqlClient } from './AzureSqlClient';
+import { MongoDbClient } from './MongoDbClient';
 
 declare var exports: any;
 
@@ -44,3 +45,4 @@ exports.AzureBotStorage = AzureBotStorage;
 exports.AzureTableClient = AzureTableClient;
 exports.DocumentDbClient = DocumentDbClient;
 exports.AzureSqlClient = AzureSqlClient;
+exports.MongoDbClient = MongoDbClient;
