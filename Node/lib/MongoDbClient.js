@@ -26,70 +26,40 @@ var MongoDbClient = (function () {
         });
     };
     MongoDbClient.prototype.insertOrReplace = function (partitionKey, rowKey, entity, isCompressed, callback) {
-        var id = partitionKey + ',' + rowKey;
-        var docDbEntity = { id: partitionKey + ',' + rowKey, data: entity, isCompressed: isCompressed };
+        var conditions = {
+            'internal_id': partitionKey + ',' + rowKey
+        };
         if (rowKey !== "userData") {
-            var newEntitiy = this.__substituteKeyDeep(entity, /\./g, '@');
-            var conditions1 = {
-                'userid': id
-            };
-            var updateobj1 = {
-                "$set": { "data": newEntitiy, "isCompressed": false }
-            };
-            this.collection.update(conditions1, updateobj1, { upsert: true }, function (err, res) {
-                callback(err, null, null);
-            });
+            entity = this.__substituteKeyDeep(entity, /\./g, '@');
         }
-        else {
-            var conditions = {
-                'userid': partitionKey
-            };
-            var update = {
-                "$set": { "data": entity }
-            };
-            this.collection.update(conditions, update, { upsert: true }, function (err, res) {
-                callback(err, null, null);
-            });
-        }
+        var update = {
+            "$set": { "data": entity, "isCompressed": isCompressed }
+        };
+        this.collection.update(conditions, update, { upsert: true }, function (err, res) {
+            callback(err, null, null);
+        });
     };
     MongoDbClient.prototype.retrieve = function (partitionKey, rowKey, callback) {
         var _this = this;
         var id = partitionKey + ',' + rowKey;
-        if (rowKey !== "userData") {
-            var query = { "$and": [{ "userid": id }] };
-            var iterator = this.collection.find(query);
-            iterator.toArray(function (error, result) {
-                if (error) {
-                    console.log("Error", error);
-                    callback(error, null, null);
-                }
-                else if (result.length == 0) {
-                    callback(null, null, null);
-                }
-                else {
-                    var document_1 = result[0];
-                    var finaldoc = _this.__substituteKeyDeep(document_1, /\@/g, '.');
+        var query = { "$and": [{ "internal_id": id }] };
+        var iterator = this.collection.find(query);
+        iterator.toArray(function (error, result) {
+            if (error) {
+                callback(MongoDbClient.getError(error), null, null);
+            }
+            else if (result.length == 0) {
+                callback(null, null, null);
+            }
+            else {
+                var finaldoc = result[0];
+                if (rowKey !== "userData") {
+                    finaldoc = _this.__substituteKeyDeep(finaldoc, /\@/g, '.');
                     finaldoc["id"] = id;
-                    callback(null, finaldoc, null);
                 }
-            });
-        }
-        else {
-            var query = { "$and": [{ "userid": partitionKey }] };
-            var iterator = this.collection.find(query);
-            iterator.toArray(function (error, result) {
-                if (error) {
-                    callback(error, null, null);
-                }
-                else if (result.length == 0) {
-                    callback(null, null, null);
-                }
-                else {
-                    var document_1 = result[0];
-                    callback(null, document_1, null);
-                }
-            });
-        }
+                callback(null, finaldoc, null);
+            }
+        });
     };
     MongoDbClient.getError = function (error) {
         if (!error)

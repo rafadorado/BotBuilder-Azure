@@ -49,9 +49,6 @@ export interface IMongoDbOptions {
     queryString: string;
 }
 
-export interface IMongoDbEntity extends IBotEntity {
-    id: string;
-}
 export interface MongoConnectOptions {
     [k: string]: any
 }
@@ -91,73 +88,44 @@ export class MongoDbClient implements IStorageClient {
 
     /** Inserts or replaces an entity in the table */
     insertOrReplace(partitionKey: string, rowKey: string, entity: any, isCompressed: boolean, callback: (error: any, etag: any, response: IHttpResponse) => void): void {
-        var id=partitionKey + ',' + rowKey
-        var docDbEntity = { id: partitionKey + ',' + rowKey, data: entity, isCompressed: isCompressed };
-        if(rowKey!=="userData"){
-            var newEntitiy = this.__substituteKeyDeep(entity,/\./g, '@');
-            var conditions1 = {
-                'userid': id
-            };
-            var updateobj1 = {
-                "$set": {"data":newEntitiy,"isCompressed":false}
-            };   
-            this.collection.update(conditions1,updateobj1,{upsert: true},function(err:any,res:any){
-                callback(err, null, null);
-            });
+        var conditions = {
+            'internal_id': partitionKey + ',' + rowKey
+        };
+
+        if(rowKey !== "userData"){
+            entity = this.__substituteKeyDeep(entity,/\./g, '@');
         }
-        else{
-            var conditions = {
-                'userid': partitionKey
-            };
-            var update = {
-                "$set": {"data":entity}
-            }
-           
-            this.collection.update(conditions,update,{upsert: true},function(err:any,res:any){
-                callback(err, null,null);
-           });
-        } 
+
+        var update:any = {
+            "$set": {"data":entity,"isCompressed":isCompressed}
+        };
+
+        this.collection.update(conditions,update,{upsert: true},function(err:any,res:any){
+            callback(err, null, null);
+        });
     }
 
     /** Retrieves an entity from the table */
     retrieve(partitionKey: string, rowKey: string, callback: (error: any, entity: IBotEntity, response: IHttpResponse) => void): void {
         var id = partitionKey + ',' + rowKey;
-        if(rowKey!=="userData"){
-            var query={"$and":[{"userid":id}]}
-            var iterator= this.collection.find(query);
-            iterator.toArray( (error:any, result:any) => {
-                if (error) {
-                    console.log("Error",error)
-                    callback(error, null, null);
-                }
-                else if (result.length == 0) {
-                    callback(null, null, null);
-                }
-                else {
-                    var document_1 = result[0];
-                    var finaldoc = this.__substituteKeyDeep(document_1, /\@/g, '.');
+        var query={"$and":[{"internal_id":id}]};
+        var iterator= this.collection.find(query);
+        iterator.toArray( (error:any, result:any) => {
+            if (error) {
+                callback(MongoDbClient.getError(error), null, null);
+            }
+            else if (result.length == 0) {
+                callback(null, null, null);
+            }
+            else {
+                var finaldoc = result[0];
+                if(rowKey!=="userData"){
+                    finaldoc = this.__substituteKeyDeep(finaldoc, /\@/g, '.');
                     finaldoc["id"]=id
-                    callback(null, finaldoc, null);
                 }
-            });
-         
-        }
-        else{
-            var query={"$and":[{"userid":partitionKey}]};
-            var iterator= this.collection.find(query);
-            iterator.toArray(function (error:any, result:any) {
-                if (error) {
-                    callback(error, null, null);
-                }
-                else if (result.length == 0) {
-                    callback(null, null, null);
-                }
-                else {
-                    var document_1 = result[0];
-                    callback(null, document_1, null);
-                }
-            });
-        }
+                callback(null, finaldoc, null);
+            }
+        });
     }
 
     private static getError(error: MongoError): Error {
